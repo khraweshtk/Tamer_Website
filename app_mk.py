@@ -1,133 +1,169 @@
 from pathlib import Path
+from typing import Optional
 import streamlit as st
+from textwrap import dedent
 
 st.set_page_config(page_title="Muneeb Khan — Resume", page_icon="💼", layout="wide")
 
-# -------------------- THEME / CSS --------------------
+# ======================== THEME / CSS (BLACK + RED) =========================
 CSS = """
 <style>
 :root{
-  --bg1:#0b1220; --bg2:#101a2b; --text:#e6f0ff; --muted:#a8b3c7;
-  --primary:#22d3ee; --primary-2:#60a5fa; --card:#0f172a;
-  --shadow: 0 8px 30px rgba(34,211,238,.15), 0 0 40px rgba(96,165,250,.1);
+  --bg1:#0a0a0c;          /* near black */
+  --bg2:#111114;          /* card background */
+  --text:#f5f5f6;         /* primary text */
+  --muted:#ababaf;        /* secondary text */
+  --primary:#ef4444;      /* red */
+  --primary-2:#f87171;    /* light red */
+  --chip-bg: rgba(255,255,255,.05);
+  --card:#0f0f12;
+  --shadow: 0 10px 30px rgba(239,68,68,.18), 0 0 40px rgba(239,68,68,.08);
 }
-html, body, .block-container {
-  background: radial-gradient(1200px 600px at -10% -10%, #0e1a2f 0%, #0b1220 35%, #0b1220 100%);
-}
-.block-container{padding-top:4rem; color:var(--text);}
 
-.gradient-text{
-  font-weight:800; letter-spacing:.3px;
-  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-2) 60%);
-  -webkit-background-clip:text; background-clip:text; color: transparent;
+html, body, .block-container {
+  background:
+    radial-gradient(1000px 500px at 0% -10%, rgba(239,68,68,.06), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgba(248,113,113,.06), transparent 60%),
+    var(--bg1);
+  color: var(--text);
 }
+.block-container{padding-top:4.5rem;}
+
+/* ---------------- NAVBAR ---------------- */
 .navbar{
   position:fixed; top:0; left:0; right:0; height:64px;
-  background:linear-gradient(180deg, rgba(13,23,41,.75), rgba(13,23,41,.45));
-  backdrop-filter: blur(10px);
+  background:linear-gradient(180deg, rgba(17,17,20,.85), rgba(17,17,20,.55));
+  backdrop-filter: blur(8px);
   border-bottom:1px solid rgba(255,255,255,.06);
   display:flex; align-items:center; justify-content:space-between;
-  padding:0 24px; z-index:999;
+  padding:0 24px; z-index:9999;
 }
-.nav-left{font-size:1.35rem; font-weight:800;}
-.nav-links{display:flex; gap:24px; align-items:center;}
-.nav-link a{color:var(--text); text-decoration:none; opacity:.85;}
-.nav-link a:hover{opacity:1; text-shadow:0 0 12px rgba(34,211,238,.6);}
-.nav-cta{ padding:8px 14px; border-radius:10px; font-weight:600;
+.nav-left{
+  font-size:1.5rem; font-weight:800;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-2) 60%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.nav-links{display:flex; gap:28px; align-items:center;}
+.nav-link a{color:var(--text); text-decoration:none; opacity:.85; font-weight:600;}
+.nav-link a:hover{opacity:1; text-shadow:0 0 10px rgba(239,68,68,.6);}
+.nav-cta{ padding:8px 14px; border-radius:10px; font-weight:700;
   background:linear-gradient(135deg, var(--primary), var(--primary-2));
-  color:#001018; text-decoration:none; box-shadow: var(--shadow); }
+  color:#130a0a; text-decoration:none; box-shadow: var(--shadow); }
+
+/* ---------------- REUSABLE ---------------- */
 .card{
-  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
   border:1px solid rgba(255,255,255,.08);
   border-radius:18px; padding:22px; box-shadow: var(--shadow);
 }
 .card-outline{
-  border:1px solid rgba(34,211,238,.35);
-  box-shadow: 0 0 0 2px rgba(34,211,238,.18), inset 0 0 40px rgba(34,211,238,.05);
-  border-radius:18px; padding:26px; background:rgba(2,8,23,.35);
+  border:1px solid rgba(239,68,68,.40);
+  box-shadow: 0 0 0 2px rgba(239,68,68,.18), inset 0 0 40px rgba(239,68,68,.05);
+  border-radius:18px; padding:26px; background:rgba(0,0,0,.35);
 }
 .section-title{ font-size:2.2rem; font-weight:800; margin:0 0 .6rem 0; }
 .rule{ height:4px; width:140px; border-radius:999px; background: linear-gradient(90deg, var(--primary), transparent); }
+
 .chips{display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;}
 .chip{
   display:inline-flex; align-items:center; gap:8px;
   padding:10px 14px; border-radius:14px;
-  background: radial-gradient(120px 60px at 30% 20%, rgba(34,211,238,.16), rgba(255,255,255,.04));
+  background: radial-gradient(120px 60px at 30% 20%, rgba(239,68,68,.14), var(--chip-bg));
   border:1px solid rgba(255,255,255,.08); font-weight:600; color:var(--text);
   box-shadow: var(--shadow);
 }
-.badge{font-size:.85rem; color:#a8b3c7;}
-.muted{color:#a8b3c7;}
+.badge{font-size:.85rem; color:var(--muted);}
+.muted{color:var(--muted);}
 .mt-2{margin-top:.5rem;} .mt-4{margin-top:1rem;} .mt-6{margin-top:1.5rem;}
 .small{font-size:.9rem;}
-</style>
-"""
 
-# --- Marquee styling for the coursework bar ---
-CSS += """
-<style>
+/* ---------------- HERO ---------------- */
+.hero{
+  display:grid; gap:28px; align-items:center;
+  grid-template-columns: 220px minmax(0,1fr);
+}
+@media (max-width: 820px){
+  .hero{ grid-template-columns: 1fr; }
+}
+
+.avatar{
+  width:220px; height:220px; border-radius:9999px; object-fit:cover;
+  box-shadow: 0 10px 30px rgba(239,68,68,.25), 0 0 0 3px rgba(248,113,113,.35) inset;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(239,68,68,.05), transparent);
+}
+.avatar-fallback{
+  width:220px; height:220px; border-radius:9999px;
+  display:flex; align-items:center; justify-content:center; font-weight:900; font-size:48px;
+  color:#ffd7d7; background:radial-gradient(60% 60% at 50% 50%, rgba(239,68,68,.08), rgba(239,68,68,.02));
+  box-shadow: 0 10px 30px rgba(239,68,68,.25), 0 0 0 3px rgba(248,113,113,.35) inset;
+}
+
+.hero-card{
+  border:1px solid rgba(239,68,68,.45);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border-radius:18px; padding:24px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.45), 0 0 0 2px rgba(239,68,68,.18);
+}
+.hero-title{
+  font-size:2.2rem; font-weight:900; line-height:1.25;
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero-desc{ font-size:1.1rem; color:var(--text); line-height:1.6; max-width:70ch; }
+.hero-desc .em{ font-weight:800; color:#fff; }
+
+/* quick links */
+.quick-links{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+.btn{
+  display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px;
+  text-decoration:none; font-weight:700; color:#130a0a;
+  background:linear-gradient(135deg, var(--primary), var(--primary-2));
+  box-shadow: var(--shadow);
+}
+.btn.secondary{
+  color:var(--text); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+}
+.btn:hover{ filter:brightness(1.05); }
+
+/* ---------------- MARQUEE (coursework) ---------------- */
 .marquee{ position:relative; overflow:hidden; width:100%; }
 .marquee__track{
-  display:flex; gap:14px; align-items:center;
-  padding:10px 0;
-  animation: marquee-scroll 24s linear infinite;
-  will-change: transform;
+  display:flex; gap:14px; align-items:center; padding:10px 0;
+  animation: marquee-scroll 24s linear infinite; will-change: transform;
 }
 .marquee:hover .marquee__track{ animation-play-state: paused; }
-
 .marquee .chip{
-  white-space:nowrap;
-  padding:10px 16px;
-  border-radius:16px;
-  background: radial-gradient(120px 60px at 30% 20%, rgba(34,211,238,.16), rgba(255,255,255,.05));
+  white-space:nowrap; padding:10px 16px; border-radius:16px;
+  background: radial-gradient(120px 60px at 30% 20%, rgba(239,68,68,.16), var(--chip-bg));
   border:1px solid rgba(255,255,255,.08);
-  box-shadow: 0 6px 22px rgba(34,211,238,.12), 0 0 24px rgba(96,165,250,.08);
+  box-shadow: 0 6px 22px rgba(239,68,68,.12), 0 0 24px rgba(239,68,68,.08);
 }
-
 .marquee__fade{
   position:absolute; top:0; bottom:0; width:80px; pointer-events:none; z-index:2;
-  background: linear-gradient(to right, rgba(11,18,32,1), rgba(11,18,32,0));
+  background: linear-gradient(to right, var(--bg1), rgba(10,10,12,0));
 }
-.marquee__fade.right{
-  right:0; transform: scaleX(-1);
-}
-
-@keyframes marquee-scroll{
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
+.marquee__fade.right{ right:0; transform: scaleX(-1); }
+@keyframes marquee-scroll{ 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 </style>
 """
-
-CSS += """
-<style>
-.avatar {
-  width: clamp(140px, 18vw, 220px);   /* min, fluid, max */
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(34,211,238,.15);
-}
-</style>
-"""
-
 st.markdown(CSS, unsafe_allow_html=True)
 
-# -------------------- NAVBAR --------------------
+# ============================ NAVBAR ============================
 st.markdown("""
 <div class="navbar">
-  <div class="nav-left gradient-text">Muneeb Khan</div>
+  <div class="nav-left">Muneeb Khan</div>
   <div class="nav-links">
     <div class="nav-link"><a href="#home">Home</a></div>
-    <div class="nav-link"><a href="#education">Education</a></div>
     <div class="nav-link"><a href="#experience">Experience</a></div>
     <div class="nav-link"><a href="#projects">Projects</a></div>
-    <div class="nav-link"><a href="#activities">Activities</a></div>
+    <div class="nav-link"><a href="#education">Education</a></div>
     <div class="nav-link"><a href="#skills">Skills</a></div>
     <a class="nav-cta" href="#contact">Contact</a>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# -------------------- DATA --------------------
+# ============================ DATA ============================
 DATA = {
   "contact": {
     "name": "Muneeb Khan",
@@ -138,6 +174,15 @@ DATA = {
     "github": "https://github.com/mkhan2050",
     "city": "Columbus, Ohio",
     "headshot": "headshot_mk.jpg"
+  },
+  "hero": {
+    "headline": "B.S. in Computer Science & Engineering",
+    "subline": "Building scalable, secure solutions across software, cloud, and AI.",
+    "description": """
+I'm a Computer Science & Engineering student at <span class='em'>Ohio State University</span>, passionate about designing impactful systems that blend modern web platforms, AI, and robust security.
+
+I turn complex problems into clean, reliable products and thrive on learning from real-world feedback.
+"""
   },
   "education": {
     "school": "The Ohio State University, Columbus, Ohio",
@@ -159,9 +204,9 @@ DATA = {
       "place": "Columbus, Ohio",
       "period": "May 2025 – July 2025",
       "points": [
-        "Configured and troubleshot pathology lab workstations and servers, ensuring uptime for digital pathology software used in research workflows.",
-        "Organized and pre-processed 10,000+ whole slide images (WSIs) for AI model training, improving dataset accessibility and standardization.",
-        "Assisted in building automated scripts for image annotation and feature extraction, reducing manual labeling time by 20%."
+        "Configured and troubleshot pathology lab workstations and servers supporting digital pathology software.",
+        "Pre-processed 10,000+ whole slide images (WSIs) for AI training; improved dataset standardization.",
+        "Automated scripts for annotation/feature extraction, reducing manual labeling by 20%."
       ]
     },
     {
@@ -170,9 +215,9 @@ DATA = {
       "place": "Columbus, Ohio",
       "period": "Dec 2023 – Feb 2024",
       "points": [
-        "Conducted data analysis on cardiomyocyte activity, automating repetitive tasks and saving 8 hours/week.",
-        "Developed visualization tools that improved data interpretation efficiency by 25%.",
-        "Streamlined team workflows by enhancing data accessibility, reducing prep time by 10%."
+        "Analyzed cardiomyocyte activity datasets, automating repetitive tasks to save 8 hours/week.",
+        "Built visualization tools improving interpretation speed by 25%.",
+        "Streamlined data access pipelines, cutting prep time by 10%."
       ]
     },
     {
@@ -181,9 +226,9 @@ DATA = {
       "place": "Columbus, Ohio",
       "period": "Mar 2024 – Present",
       "points": [
-        "Collaborated with the team to design and integrate APIs, saving 10+ hours/month of manual inventory tracking.",
-        "Spearheaded planning and development of iOS and Android apps for 100+ early adopters.",
-        "Conducted beta testing with users, addressing 30 improvements for platform refinement."
+        "Designed & integrated APIs, projected to save 10+ hours/month of manual inventory tracking.",
+        "Led iOS/Android feature development for 100+ early adopters.",
+        "Ran beta sessions; shipped 30+ UX and navigation improvements pre-launch."
       ]
     },
     {
@@ -192,9 +237,9 @@ DATA = {
       "place": "Columbus, Ohio",
       "period": "Jul 2024 – Present",
       "points": [
-        "Investigated and resolved cybersecurity incidents using CrowdStrike, securing 200+ devices.",
-        "Performed networking tasks (router/switch configurations) to optimize departmental performance.",
-        "Collaborated with the IT team to enhance security, reducing vulnerabilities by 20%."
+        "Investigated & resolved cybersecurity incidents with CrowdStrike (200+ devices).",
+        "Configured networking gear (routers/switches) to boost departmental performance.",
+        "Collaborated on infra hardening, reducing vulnerabilities by 20%."
       ]
     }
   ],
@@ -203,24 +248,24 @@ DATA = {
       "name": "Chatbot with Sentiment Analysis",
       "period": "Aug 2024 – Sep 2024",
       "points": [
-        "Built chatbot using Rasa/Dialogflow; sentiment detection via VADER + BERT (92% accuracy).",
-        "Customizable templates for adaptability; deployed with Flask for scalability."
+        "Rasa/Dialogflow chatbot; VADER + BERT for sentiment (92% accuracy).",
+        "Customizable templates; Flask deployment for scalability."
       ]
     },
     {
-      "name": "To-Do List Application with React",
+      "name": "To-Do List App (React)",
       "period": "Oct 2024 – Nov 2024",
       "points": [
-        "Responsive to-do app with add/update/delete.",
-        "Used state management for smooth UX; local storage for up to 20 tasks/session."
+        "Responsive CRUD with smooth state management.",
+        "Local storage persistence for ~20 tasks/session; user-tested UI."
       ]
     },
     {
-      "name": "AI-Powered Predictive Maintenance for Automobiles",
+      "name": "AI-Powered Predictive Maintenance",
       "period": "Nov 2024 – Dec 2024",
       "points": [
-        "Python-based predictive maintenance system on sensor data (95% accuracy).",
-        "Scikit-learn + TensorFlow to detect failures; dashboard with Plotly Dash."
+        "Python + Scikit-learn/TensorFlow on vehicle sensor data (95% accuracy).",
+        "Anomaly detection for engine/brake/tire health; analytics via Plotly Dash."
       ]
     }
   ],
@@ -230,7 +275,7 @@ DATA = {
       "place": "Columbus, Ohio",
       "period": "Aug 2021 – Current",
       "points": [
-        "Led youth-oriented programs/initiatives for community development within a non-profit."
+        "Led youth-oriented programs for community development in a non-profit."
       ]
     },
     {
@@ -238,7 +283,7 @@ DATA = {
       "place": "Columbus, Ohio",
       "period": "Aug 2023 – Current",
       "points": [
-        "Member of AI Club, Collaborative Software Development Club, and Competitive Coding Club"
+        "AI Club, Collaborative Software Development Club, Competitive Coding Club."
       ]
     }
   ],
@@ -249,15 +294,32 @@ DATA = {
   }
 }
 
-# ---------- Helpers ----------
+# ============================ HELPERS ============================
+def find_headshot(preferred: str) -> Optional[str]:
+  """Return a path string to the headshot, trying common case/extension variants."""
+  if not preferred:
+    return None
+  p = Path(preferred)
+  candidates = [
+    p,
+    p.with_suffix(".JPG"), p.with_suffix(".JPEG"), p.with_suffix(".png"), p.with_suffix(".PNG"),
+    Path("headshot.jpg"), Path("headshot.JPG"), Path("headshot.jpeg"), Path("headshot.PNG"),
+    Path("headshot_mk.jpg"), Path("headshot_mk.JPG"), Path("headshot_mk.jpeg"),
+  ]
+  candidates += list(Path(".").glob("headshot*.*"))
+  for c in candidates:
+    if c.exists():
+      return c.as_posix()
+  return None
+
 def chips(items):
-    st.markdown("<div class='chips'>" + "".join(f"<div class='chip'>{i}</div>" for i in items) + "</div>", unsafe_allow_html=True)
+  st.markdown("<div class='chips'>" + "".join(f"<div class='chip'>{i}</div>" for i in items) + "</div>", unsafe_allow_html=True)
 
 def marquee_chips(items, seconds: float = 26):
-    """Neon pill marquee that scrolls horizontally; pauses on hover."""
-    doubled = items + items  # duplicate for seamless loop
-    chips_html = "".join(f"<div class='chip'>{i}</div>" for i in doubled)
-    html = f"""
+  doubled = items + items
+  chips_html = "".join(f"<div class='chip'>{i}</div>" for i in doubled)
+  st.markdown(
+    f"""
     <div class="marquee">
       <div class="marquee__fade"></div>
       <div class="marquee__fade right"></div>
@@ -265,92 +327,103 @@ def marquee_chips(items, seconds: float = 26):
         {chips_html}
       </div>
     </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+  )
 
-# -------------------- HEADER --------------------
+
+# ============================ HERO (TOP) ============================
 st.markdown('<a id="home"></a>', unsafe_allow_html=True)
-left, right = st.columns([3,1.2])
-with left:
-    st.title(DATA["contact"]["name"])
-    st.caption(f"{DATA['contact']['citizenship']}  •  {DATA['contact']['city']}")
-    st.markdown(
-        f"📞 **{DATA['contact']['phone']}**  |  ✉️ "
-        f"[{DATA['contact']['email']}](mailto:{DATA['contact']['email']})  |  "
-        f"🔗 [LinkedIn]({DATA['contact']['linkedin']})  |  "
-        f"🔧 [GitHub]({DATA['contact']['github']})"
-    )
-with right:
-    headshot_path = Path(DATA['contact']['headshot'])
-    if headshot_path.exists():
-        st.image(str(headshot_path), use_container_width=True)
-    else:
-        st.markdown("<div class='muted'>Upload headshot_mk.jpg next to app.py</div>", unsafe_allow_html=True)
-        
+img_src = find_headshot(DATA["contact"]["headshot"])
+avatar_html = f"<img src='{img_src}' class='avatar'/>" if img_src else "<div class='avatar-fallback'>MK</div>"
 
-# -------------------- EDUCATION --------------------
+st.markdown(
+  dedent(f"""
+  <div class="hero">
+    <div>{avatar_html}</div>
+    <div class="hero-card">
+      <div class="hero-title">{DATA["hero"]["headline"]}</div>
+      <div class="muted mt-2">{DATA["hero"]["subline"]}</div>
+      <div class="hero-desc mt-4">{DATA['hero']['description']}</div>
+      <div class="quick-links">
+        <a class="btn" href="{DATA['contact']['linkedin']}" target="_blank">🔗 LinkedIn</a>
+        <a class="btn" href="{DATA['contact']['github']}" target="_blank">💻 GitHub</a>
+        <a class="btn secondary" href="mailto:{DATA['contact']['email']}">✉️ Email</a>
+      </div>
+      <div class="mt-4">
+        <span class="badge">📍 {DATA['contact']['city']}</span> &nbsp;&nbsp;
+        <span class="badge">📞 {DATA['contact']['phone']}</span> &nbsp;&nbsp;
+        <span class="badge">✉️ <a href="mailto:{DATA['contact']['email']}" style="color:inherit;text-decoration:none">{DATA['contact']['email']}</a></span>
+      </div>
+    </div>
+  </div>
+  """),
+  unsafe_allow_html=True
+)
+
+
+# ============================ EDUCATION ============================
 st.markdown('<a id="education"></a>', unsafe_allow_html=True)
 st.markdown("<div class='section-title mt-6'>Education</div>", unsafe_allow_html=True)
 st.markdown(
-    f"<div class='card'><strong>{DATA['education']['school']}</strong><br/>{DATA['education']['degree']}<br/><span class='muted'>{DATA['education']['grad']} · {DATA['education']['deans_list']}</span></div>",
-    unsafe_allow_html=True
+  f"<div class='card'><strong>{DATA['education']['school']}</strong><br/>{DATA['education']['degree']}<br/>"
+  f"<span class='muted'>{DATA['education']['grad']} · {DATA['education']['deans_list']}</span></div>",
+  unsafe_allow_html=True
 )
 st.markdown("**Related Coursework**")
-# marquee version (replaces chips(...))
 marquee_chips(DATA["education"]["coursework"], seconds=26)
-
 st.markdown("**Certifications**")
 for c in DATA["education"]["certs"]:
-    st.markdown(f"- {c}")
+  st.markdown(f"- {c}")
 
-# -------------------- EXPERIENCE --------------------
+# ============================ EXPERIENCE ============================
 st.markdown('<a id="experience"></a>', unsafe_allow_html=True)
 st.markdown("<div class='section-title mt-6'>Experience</div>", unsafe_allow_html=True)
 for e in DATA["experience"]:
-    st.markdown(
-        f"<div class='card'><div style='display:flex;justify-content:space-between;align-items:center;'>"
-        f"<div><strong>{e['role']}</strong> · {e['org']} — <span class='muted'>{e['place']}</span></div>"
-        f"<div class='muted'>{e['period']}</div></div></div>",
-        unsafe_allow_html=True
-    )
-    for p in e["points"]:
-        st.markdown(f"- {p}")
+  st.markdown(
+    f"<div class='card'><div style='display:flex;justify-content:space-between;align-items:center;'>"
+    f"<div><strong>{e['role']}</strong> · {e['org']} — <span class='muted'>{e['place']}</span></div>"
+    f"<div class='muted'>{e['period']}</div></div></div>",
+    unsafe_allow_html=True
+  )
+  for p in e["points"]:
+    st.markdown(f"- {p}")
 
-# -------------------- PROJECTS --------------------
+# ============================ PROJECTS ============================
 st.markdown('<a id="projects"></a>', unsafe_allow_html=True)
 st.markdown("<div class='section-title mt-6'>Projects</div>", unsafe_allow_html=True)
 for p in DATA["projects"]:
-    st.markdown(
-        f"<div class='card-outline'><div style='display:flex;justify-content:space-between;align-items:center;'>"
-        f"<div style='font-weight:700;font-size:1.05rem'>{p['name']}</div>"
-        f"<div class='muted'>{p['period']}</div></div></div>",
-        unsafe_allow_html=True
-    )
-    for b in p["points"]:
-        st.markdown(f"- {b}")
+  st.markdown(
+    f"<div class='card-outline'><div style='display:flex;justify-content:space-between;align-items:center;'>"
+    f"<div style='font-weight:700;font-size:1.05rem'>{p['name']}</div>"
+    f"<div class='muted'>{p['period']}</div></div></div>",
+    unsafe_allow_html=True
+  )
+  for b in p["points"]:
+    st.markdown(f"- {b}")
 
-# -------------------- ACTIVITIES --------------------
+# ============================ ACTIVITIES ============================
 st.markdown('<a id="activities"></a>', unsafe_allow_html=True)
 st.markdown("<div class='section-title mt-6'>Activities & Leadership</div>", unsafe_allow_html=True)
 for a in DATA["activities"]:
-    st.markdown(
-        f"<div class='card'><div style='display:flex;justify-content:space-between;align-items:center;'>"
-        f"<div><strong>{a['name']}</strong> — <span class='muted'>{a['place']}</span></div>"
-        f"<div class='muted'>{a['period']}</div></div></div>",
-        unsafe_allow_html=True
-    )
-    for b in a["points"]:
-        st.markdown(f"- {b}")
+  st.markdown(
+    f"<div class='card'><div style='display:flex;justify-content:space-between;align-items:center;'>"
+    f"<div><strong>{a['name']}</strong> — <span class='muted'>{a['place']}</span></div>"
+    f"<div class='muted'>{a['period']}</div></div></div>",
+    unsafe_allow_html=True
+  )
+  for b in a["points"]:
+    st.markdown(f"- {b}")
 
-# -------------------- SKILLS --------------------
+# ============================ SKILLS ============================
 st.markdown('<a id="skills"></a>', unsafe_allow_html=True)
 st.markdown("<div class='section-title mt-6'>Skills</div>", unsafe_allow_html=True)
 tabs = st.tabs(list(DATA["skills"].keys()))
 for tab, key in zip(tabs, DATA["skills"].keys()):
-    with tab:
-        chips(DATA["skills"][key])
+  with tab:
+    chips(DATA["skills"][key])
 
-# -------------------- CONTACT --------------------
+# ============================ CONTACT ============================
 st.markdown('<a id="contact"></a>', unsafe_allow_html=True)
 st.markdown("<div class='section-title mt-6'>Contact</div>", unsafe_allow_html=True)
 st.markdown(f"**Email:** [{DATA['contact']['email']}](mailto:{DATA['contact']['email']})")
@@ -359,4 +432,4 @@ st.markdown(f"**Location:** {DATA['contact']['city']}")
 st.markdown(f"**LinkedIn:** {DATA['contact']['linkedin']}")
 st.markdown(f"**GitHub:** {DATA['contact']['github']}")
 
-st.markdown("<div class='muted mt-6 small'>Built with Streamlit & Python</div>", unsafe_allow_html=True)
+st.markdown("<div class='muted mt-6 small'>Built with Streamlit • Black + Red theme</div>", unsafe_allow_html=True)
